@@ -1,23 +1,37 @@
 <script setup>
-import { reactive, computed, defineProps, ref, defineEmits, watch } from "vue";
-const props = defineProps([
-  "options",
-  "placeholder",
-  "readValue",
-  "readText",
-  "search",
-  "value",
-  "modelValue",
-]);
-const searchInput = ref(null);
+import {
+  reactive,
+  computed,
+  defineProps,
+  defineEmits,
+  watch,
+  onMounted,
+} from "vue";
+const props = defineProps({
+  options: Array,
+  placeholder: String,
+  readValue: String,
+  readText: String,
+  search: Boolean,
+  value: [String, Number, Object],
+  modelValue: [String, Number, Object],
+});
 const emit = defineEmits(["update:modelValue"]);
+const searchId = "search_" + Math.floor(Math.random() * 100);
+const wrapperId = "wrapper_" + Math.floor(Math.random() * 100);
 
+onMounted(() => {
+  //select list is hidden with opacity and it renders no matter state.openList is, so we need to set the position when mounted aswell.
+  setListPosition();
+});
 const state = reactive({
   selectedOption: null,
   openList: false,
   immediateRan: false,
   searchVal: "",
-  modelPrimitive: false,
+  searchId: searchId,
+  wrapperId: wrapperId,
+  openAbove: false,
   isPrimitive: computed(() => {
     return (
       props.options &&
@@ -61,17 +75,15 @@ const modelPrimitive = computed(() => {
 });
 function onSelectOption(opt) {
   state.selectedOption = { value: opt.value, text: opt.text };
-  emit(
-    "update:modelValue",
-    modelPrimitive.value ? state.selectedOption.value : state.selectedOption
-  );
-  state.openList = false;
+  emitModel();
 }
 const onEscape = (e) => {
   if (
-    !e.relatedTarget ||
-    !e.relatedTarget.type == "input" ||
-    !e.relatedTarget.id == "ag-select-search"
+    !(
+      e.relatedTarget &&
+      (e.relatedTarget.id == state.searchId ||
+        e.relatedTarget.id == state.wrapperId)
+    )
   ) {
     state.openList = false;
   }
@@ -86,7 +98,7 @@ const onWrapperClick = (e) => {
   else {
     state.openList = !state.openList;
     if (state.openList && props.search) {
-      searchInput.value.focus();
+      document.getElementById(state.searchId).focus();
     }
   }
 };
@@ -95,12 +107,35 @@ const onSearchInput = (e) => {
 };
 const onClear = () => {
   state.selectedOption = null;
+  emitModel();
+};
+
+const emitModel = () => {
+  emit(
+    "update:modelValue",
+    modelPrimitive.value || state.isPrimitive
+      ? state.selectedOption
+        ? state.selectedOption.value
+        : null
+      : state.selectedOption
+  );
+  state.openList = false;
+};
+const setListPosition = () => {
+  const element = document.getElementById(state.wrapperId);
+
+  const elementRect = element.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - elementRect.bottom;
+  if (spaceBelow < 300) {
+    state.openAbove = true;
+  } else {
+    state.openAbove = false;
+  }
 };
 watch(
   () => props.modelValue,
   (newValue) => {
     if (newValue) {
-      console.log("optionsComp", optionsComp, newValue);
       let opt;
       if (newValue.value) {
         opt = optionsComp.value.find((x) => x.value == newValue.value);
@@ -109,7 +144,6 @@ watch(
       }
 
       if (opt) {
-        console.log("buraya mı firmiyor");
         state.selectedOption = { value: opt.value, text: opt.text };
       } else {
         state.selectedOption = null;
@@ -120,6 +154,15 @@ watch(
   },
   { immediate: true }
 );
+//watching wrapper elements space below to decide whether to show the list above or below the wrapper
+watch(
+  () => state.openList,
+  (newValue) => {
+    if (newValue) {
+      setListPosition();
+    }
+  }
+);
 </script>
 
 <template>
@@ -127,8 +170,9 @@ watch(
     class="select-wrapper"
     :class="{ open: state.openList }"
     @click="onWrapperClick"
-    tabindex="0"
+    tabindex="-1"
     @blur="onEscape"
+    :id="state.wrapperId"
   >
     <div class="current" @click="onWrapperClick">
       <span
@@ -139,29 +183,30 @@ watch(
         >&times;</i
       >
     </div>
-    <div class="list-wrapper">
+    <div class="list-wrapper" :class="{ 'show-up': state.openAbove }">
       <div v-if="props.search" class="search">
         <input
           @input="onSearchInput"
           type="text"
-          id="ag-select-search"
-          ref="searchInput"
+          :id="state.searchId"
           placeholder="Search"
           @blur="onEscape"
         />
       </div>
       <ul class="list" :class="{ 'search-list': props.search }">
-        <!-- <li v-if="props.placeholder" class="option disabled">
-        {{ props.placeholder }}
-      </li> -->
         <li
           v-for="(opt, i) in optionsComp"
           :class="{ selected: isSelected(opt) }"
           :key="i + 1"
+          :id="'ag__opt' + (i + 1)"
           class="option"
-          @click.stop="onSelectOption(opt)"
+          @click.stop="
+            () => {
+              onSelectOption(opt);
+            }
+          "
         >
-          {{ opt["text"] }}
+          <slot name="option" v-bind="opt">{{ opt["text"] }}</slot>
         </li>
       </ul>
     </div>
@@ -170,7 +215,7 @@ watch(
 
 <style scoped lang="scss">
 .select-wrapper {
-  width: 240px;
+  width: 260px;
   -webkit-tap-highlight-color: transparent;
   background-color: #fff;
   border-radius: 5px;
@@ -181,7 +226,7 @@ watch(
   display: block;
   float: left;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: normal;
   height: 42px;
   line-height: 40px;
@@ -229,17 +274,11 @@ watch(
     display: block;
     height: 5px;
     margin-top: -4px;
-    /*pointer-events: none;*/
     position: absolute;
     right: 12px;
     top: 50%;
-    -webkit-transform-origin: 66% 66%;
-    -ms-transform-origin: 66% 66%;
     transform-origin: 66% 66%;
-    -webkit-transform: rotate(45deg);
-    -ms-transform: rotate(45deg);
     transform: rotate(45deg);
-    -webkit-transition: all 0.15s ease-in-out;
     transition: all 0.15s ease-in-out;
     width: 5px;
   }
@@ -265,20 +304,26 @@ watch(
     border-radius: 5px;
     box-shadow: 0 0 0 1px rgb(68 68 68 / 11%);
     box-sizing: border-box;
-    margin-top: 4px;
     opacity: 0;
     padding: 0;
     pointer-events: none;
     position: absolute;
-    top: 100%;
     left: 0;
     transform-origin: 50% 0;
     transform: scale(0.75) translateY(-21px);
     opacity: 0.15s ease-out;
     transition: all 0.2s cubic-bezier(0.5, 0, 0, 1.25), opacity 0.15s ease-out;
     z-index: 9;
-    color: #ff8b0da1;
+    color: #ffcb78;
     -webkit-text-fill-color: black;
+    &:not(.show-up) {
+      top: 100%;
+      margin-top: 5px;
+    }
+    &.show-up {
+      bottom: 100%;
+      margin-bottom: 5px;
+    }
     .search {
       display: flex;
       padding: 10px;
@@ -306,7 +351,7 @@ watch(
     }
 
     &:hover {
-      color: #ff8b0d;
+      color: #ffb945;
     }
 
     &::-webkit-scrollbar {
@@ -336,13 +381,12 @@ watch(
     padding-left: 5px;
     padding-right: 29px;
     text-align: left;
-    -webkit-transition: all 0.2s;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.5, 0, 0, 1.25);
     border-radius: 5px;
 
     &:not(.disabled):not(.selected):hover {
       background-color: #ffb945;
-      padding-left: 13px;
+      padding-left: 14px;
       -webkit-text-fill-color: #fff;
     }
 
@@ -355,14 +399,8 @@ watch(
 
     &.selected {
       font-weight: bold;
-      padding-left: 13px;
+      padding-left: 14px;
       background-color: #f6f6f6;
-    }
-
-    &:after {
-      -webkit-transform: rotate(-135deg);
-      -ms-transform: rotate(-135deg);
-      transform: rotate(-135deg);
     }
   }
 }
