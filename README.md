@@ -12,7 +12,7 @@ ag-select is a custom component that takes advantage of many features of Vue3 an
 
 ### :gun: Getting Started
 
-For ag-select to work correctly basically you need to provide options array and a placeholder. see the code example below:
+For ag-select to work correctly basically you need to provide options array and a placeholder. See the code example below:
 
 ```
 <ag-select
