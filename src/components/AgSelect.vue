@@ -8,12 +8,17 @@ import {
   onMounted,
 } from "vue";
 const props = defineProps({
-  options: Array,
-  placeholder: String,
+  options: {
+    type: Array,
+    required: true,
+  },
+  placeholder: {
+    type: String,
+    default: "",
+  },
   readValue: String,
   readText: String,
   search: Boolean,
-  value: [String, Number, Object],
   modelValue: [String, Number, Object],
 });
 const emit = defineEmits(["update:modelValue"]);

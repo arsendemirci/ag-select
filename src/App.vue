@@ -103,6 +103,7 @@ export default {
   name: "App",
   data() {
     return {
+      friend: "",
       model1: 12,
       model2: { value: 1, text: "VueJS" },
       model3: { value: 3, text: "Angular" },
