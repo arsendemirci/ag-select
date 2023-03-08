@@ -12,7 +12,7 @@ ag-select is a custom component that takes advantage of many features of Vue3 an
 &nbsp;
 ### :clapper: Demo
 
-You can check the [AG Select Demo Page](https://arsendemirci.github.io/ag-select/)  to see the examples in action. 
+You can check the [AG Select Demo Page](https://arsendemirci-ag-select.netlify.app/)  to see the examples in action. 
 \
 &nbsp;
 
