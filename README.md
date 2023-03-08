@@ -1,14 +1,20 @@
 ##  :star: ag-select
 
 ag-select is a  select component, designed to be used in forms of vue3 projects.
-
+\
+&nbsp;
 ### :eyes: Overview
 
 This project is actually a part of a vue3 component library  project that is under development right now.
 ag-select is a custom component that takes advantage of many features of Vue3 and facilitates two way data binding with 
 **v-model**. 
+\
+&nbsp;
+### :clapper: Demo
 
-:point_right: :point_right:  You can check the [AG Select Demo Page](https://arsendemirci.github.io/ag-select/) to see the examples in action.
+You can check the [AG Select Demo Page](https://arsendemirci.github.io/ag-select/)  to see the examples in action. 
+\
+&nbsp;
 
 ### :gun: Getting Started
 
@@ -30,7 +36,8 @@ export  default {
 };
 </script>
 ```
-
+\
+&nbsp;
 ### :bomb: Features
 
 - Two way data binding with v-model capability
@@ -39,7 +46,8 @@ export  default {
 - Automatically positions option list according to space available above or below the select wrapper
 - Optional search capabality
 - Clear the state and model :heavy_multiplication_x: button.
-
+\
+&nbsp;
 ### :pill: Props
 
 <table border="2">
